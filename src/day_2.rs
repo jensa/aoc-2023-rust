@@ -57,6 +57,16 @@ fn to_game(line:String) -> Game {
     }
 }
 
+pub trait OptNumStr {
+    fn to_i32(&self) -> i32;
+}
+
+impl OptNumStr for &str {
+    fn to_i32(&self) -> i32 { 
+        return self.to_string().parse::<i32>().unwrap()
+    }
+}
+
 #[derive(Debug)]
 struct Game {
     max_red: i32,
