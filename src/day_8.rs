@@ -18,7 +18,7 @@ pub fn solve() {
         let m = s.next().unwrap().to_string();
         let mut s2 = m.split(", ");
         let left_s:String = s2.next().unwrap().to_string().replace("(", "");
-        let right_s:String = s2.next().unwrap().to_string().replace(")", "");;
+        let right_s:String = s2.next().unwrap().to_string().replace(")", "");
 
         left.insert(key.clone(), left_s);
         right.insert(key.clone(), right_s);
