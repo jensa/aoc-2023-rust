@@ -20,52 +20,123 @@ pub fn solve() {
       }
   }
 
-  print_matrix(&matrix);
-
 
   //figure out start points
   let start_points = figure_out_connecting_points(start_point, &matrix);
-  let mut p1 = start_points[0];
-  let mut p2 = start_points[1];
-  let mut visited:HashSet<(usize, usize)> = HashSet::from([start_point, p1, p2]);
-  println!("startpoint: {:?}", start_point);
-  println!("startpoints: {:?} and {:?}", p1,p2);
-  let mut steps = 1;
+  let mut p1: (usize, usize) = start_points[0];
+  let p2 = start_points[1];
+  let mut visited:HashSet<(usize, usize)> = HashSet::from([start_point, p1]);
+  let mut e_w_loop_pipes:HashSet<(usize, usize)> = HashSet::new();
+  let mut n_s_loop_pipes:HashSet<(usize, usize)> = HashSet::new();
+  if p1.0 == start_point.0 && p2.0 == start_point.0 {
+    matrix[start_point.0][start_point.1] = '-';
+    e_w_loop_pipes.insert(start_point);
+  } else if p1.1 == start_point.1 && p2.1 == start_point.1  {
+    matrix[start_point.0][start_point.1] = '|';
+    n_s_loop_pipes.insert(start_point);
+  } else {
+    e_w_loop_pipes.insert(start_point);
+    n_s_loop_pipes.insert(start_point);
+
+    if p1.0 < start_point.0 {
+      //one of the points is above, so it has to be L or J
+      if p2.1 < start_point.1 {
+        matrix[start_point.0][start_point.1] = 'J';
+      } else {
+        matrix[start_point.0][start_point.1] = 'L';
+      }
+    } else if p2.0 < start_point.0 {
+      //one of the points is above, so it has to be L or J
+      if p1.1 < start_point.1 {
+        matrix[start_point.0][start_point.1] = 'J';
+      } else {
+        matrix[start_point.0][start_point.1] = 'L';
+      }
+    } else if p1.0 > start_point.0 {
+      //one of the points is below, so it has to be F or 7
+      if p2.1 < start_point.1 {
+        matrix[start_point.0][start_point.1] = '7';
+      } else {
+        matrix[start_point.0][start_point.1] = 'F';
+      }
+    }
+    else if p2.0 > start_point.0 {
+      //one of the points is below, so it has to be F or 7
+      if p1.1 < start_point.1 {
+        matrix[start_point.0][start_point.1] = '7';
+      } else {
+        matrix[start_point.0][start_point.1] = 'F';
+      }
+    }
+  }
+  print_matrix(&matrix);
+  let s_chars:HashSet<char> = HashSet::from(['|', '7', 'F']);
+  let n_chars:HashSet<char> = HashSet::from(['|', 'L', 'J']);
+  let w_chars:HashSet<char> = HashSet::from(['-', 'J', '7']);
+  let e_chars:HashSet<char> = HashSet::from(['-', 'L', 'F']);
+  let mut new_matrix = matrix.clone();
+  new_matrix[start_point.0][start_point.1] = 'Q';
   loop {
 
-    steps += 1;
-    //figure out the two directions from p1 and p2
-    //we have to keep track of where we've been in visited
-
-    // move p1 first, put in visited, then move p2
     let first_p = get_points(&p1, &visited, &matrix);
+    new_matrix[p1.0][p1.1] = 'Q';
     if first_p.is_some() {
-      //println!("p1: {:?} ({})", first_p, matrix[first_p.unwrap().0][first_p.unwrap().1]);
+      let c = &matrix[p1.0][p1.1];
       visited.insert(first_p.unwrap());
+      if s_chars.contains(c) || n_chars.contains(c) {
+        n_s_loop_pipes.insert(p1);
+      } if w_chars.contains(c) || e_chars.contains(c) {
+        e_w_loop_pipes.insert(p1);
+      }
       p1 = first_p.unwrap();
     } else {
-      // we have nowhere to go, we reached the mid point furthest away from the start
-      break;
-    }
-    let second_p = get_points(&p2, &visited, &matrix);
-    if second_p.is_some() {
-      //println!("p2: {:?} ({})", second_p, matrix[second_p.unwrap().0][second_p.unwrap().1]);
-      visited.insert(second_p.unwrap());
-      p2 = second_p.unwrap();
-    } else {
-      // we have nowhere to go, we reached the mid point furthest away from the start
+      let c = &matrix[p1.0][p1.1];
+      if s_chars.contains(c) || n_chars.contains(c) {
+        n_s_loop_pipes.insert(p1);
+      } if w_chars.contains(c) || e_chars.contains(c) {
+        e_w_loop_pipes.insert(p1);
+      }
       break;
     }
   }
-  println!("{}", steps);
 
-  /*
-  .....
-  .S-7.
-  .|.|.
-  .L-J.
-  .....
-   */
+  let mut included = 0;
+  print_matrix(&new_matrix);
+  
+  for y in 1..matrix.len() - 1 {
+    let mut inside = false;
+    let mut last_opened_char = '.';
+    for x in 1..matrix[y].len() - 1 {
+      if visited.contains(&(y,x)) {
+        if matrix[y][x] == '|' {
+          inside = !inside;
+          last_opened_char = '|';
+        } else if matrix[y][x] == 'L' || matrix[y][x] == 'F' {
+          inside = !inside;
+          last_opened_char = matrix[y][x];
+        } else if matrix[y][x] == '7' {
+          if last_opened_char != 'L' {
+            inside = !inside;
+            last_opened_char = '7';
+          }
+        } else if matrix[y][x] == 'J' {
+          if last_opened_char != 'F' {
+            inside = !inside;
+            last_opened_char = 'J';
+          }
+        }
+      } else if inside {
+        new_matrix[y][x] = 'I';
+        included += 1;
+      
+      }
+  }
+
+  }
+
+  print_matrix(&matrix);
+  print_matrix(&new_matrix);
+  println!("{}", included);
 
 }
 
@@ -80,23 +151,12 @@ fn print_matrix (matrix: &Vec<Vec<char>>) {
 
 fn figure_out_connecting_points(start_point: (usize, usize), matrix: &Vec<Vec<char>>) -> Vec<(usize,usize)> {
 
-  let s_chars:HashSet<char> = HashSet::from(['|', '7', 'F']);
-  let n_chars:HashSet<char> = HashSet::from(['|', 'L', 'J']);
-  let w_chars:HashSet<char> = HashSet::from(['-', 'J', '7']);
-  let e_chars:HashSet<char> = HashSet::from(['-', 'L', 'F']);
+  let s_chars:HashSet<char> = HashSet::from(['|', '7', 'F', 'S']);
+  let n_chars:HashSet<char> = HashSet::from(['|', 'L', 'J', 'S']);
+  let w_chars:HashSet<char> = HashSet::from(['-', 'J', '7', 'S']);
+  let e_chars:HashSet<char> = HashSet::from(['-', 'L', 'F', 'S']);
   let y = start_point.0;
   let x = start_point.1;
-
-    /*
-| is a vertical pipe connecting north and south.
-- is a horizontal pipe connecting east and west.
-L is a 90-degree bend connecting north and east.
-J is a 90-degree bend connecting north and west.
-7 is a 90-degree bend connecting south and west.
-F is a 90-degree bend connecting south and east.
-. is ground; there is no pipe in this tile.
-S is the starting position of the animal; there is a pipe on this tile, but your sketch doesn't show what shape the pipe has.
- */
   let mut points = vec![];
   if s_chars.contains(&matrix[y-1][x]) { // N
     points.push((y-1,x));
@@ -113,27 +173,7 @@ S is the starting position of the animal; there is a pipe on this tile, but your
   return points;
 }
 
-fn is_part_of_part(matrix:&Vec<Vec<char>>, x:usize,y:usize) -> bool {
-  //the test needs to check all spaces of the matrix around x,y, so that means 8 places:
-
-  return false;
-}
-
-//we just return one point here because we don't care about multiple
 fn get_points(p: &(usize,usize), visited: &HashSet<(usize,usize)>, matrix: &Vec<Vec<char>>) -> Option<(usize,usize)> {
-
-  //check the squares around the point, only certain pipes fit into certain others
-
-  /*
-| is a vertical pipe connecting north and south.
-- is a horizontal pipe connecting east and west.
-L is a 90-degree bend connecting north and east.
-J is a 90-degree bend connecting north and west.
-7 is a 90-degree bend connecting south and west.
-F is a 90-degree bend connecting south and east.
-. is ground; there is no pipe in this tile.
-S is the starting position of the animal; there is a pipe on this tile, but your sketch doesn't show what shape the pipe has.
- */
   let c = matrix[p.0][p.1];
   let mut points = vec![];
   if c == '|' {
@@ -154,8 +194,6 @@ S is the starting position of the animal; there is a pipe on this tile, but your
   if c == 'F' {
     points = vec![(p.0+1, p.1), (p.0, p.1+1)];
   }
-
-  //none should be dots, but maybe they can break?
   let unvisited:Vec<(usize, usize)> = points.iter().filter(|p| !visited.contains(p)).map(|p| *p).collect();
 
   return if unvisited.is_empty() { Option::None} else { unvisited.first().copied()}
