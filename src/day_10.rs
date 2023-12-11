@@ -26,17 +26,11 @@ pub fn solve() {
   let mut p1: (usize, usize) = start_points[0];
   let p2 = start_points[1];
   let mut visited:HashSet<(usize, usize)> = HashSet::from([start_point, p1]);
-  let mut e_w_loop_pipes:HashSet<(usize, usize)> = HashSet::new();
-  let mut n_s_loop_pipes:HashSet<(usize, usize)> = HashSet::new();
   if p1.0 == start_point.0 && p2.0 == start_point.0 {
     matrix[start_point.0][start_point.1] = '-';
-    e_w_loop_pipes.insert(start_point);
   } else if p1.1 == start_point.1 && p2.1 == start_point.1  {
     matrix[start_point.0][start_point.1] = '|';
-    n_s_loop_pipes.insert(start_point);
   } else {
-    e_w_loop_pipes.insert(start_point);
-    n_s_loop_pipes.insert(start_point);
 
     if p1.0 < start_point.0 {
       //one of the points is above, so it has to be L or J
@@ -69,39 +63,17 @@ pub fn solve() {
       }
     }
   }
-  print_matrix(&matrix);
-  let s_chars:HashSet<char> = HashSet::from(['|', '7', 'F']);
-  let n_chars:HashSet<char> = HashSet::from(['|', 'L', 'J']);
-  let w_chars:HashSet<char> = HashSet::from(['-', 'J', '7']);
-  let e_chars:HashSet<char> = HashSet::from(['-', 'L', 'F']);
-  let mut new_matrix = matrix.clone();
-  new_matrix[start_point.0][start_point.1] = 'Q';
   loop {
-
-    let first_p = get_points(&p1, &visited, &matrix);
-    new_matrix[p1.0][p1.1] = 'Q';
-    if first_p.is_some() {
-      let c = &matrix[p1.0][p1.1];
-      visited.insert(first_p.unwrap());
-      if s_chars.contains(c) || n_chars.contains(c) {
-        n_s_loop_pipes.insert(p1);
-      } if w_chars.contains(c) || e_chars.contains(c) {
-        e_w_loop_pipes.insert(p1);
-      }
-      p1 = first_p.unwrap();
+    let new_p = get_points(&p1, &visited, &matrix);
+    if new_p.is_some() {
+      visited.insert(new_p.unwrap());
+      p1 = new_p.unwrap();
     } else {
-      let c = &matrix[p1.0][p1.1];
-      if s_chars.contains(c) || n_chars.contains(c) {
-        n_s_loop_pipes.insert(p1);
-      } if w_chars.contains(c) || e_chars.contains(c) {
-        e_w_loop_pipes.insert(p1);
-      }
       break;
     }
   }
 
   let mut included = 0;
-  print_matrix(&new_matrix);
   
   for y in 1..matrix.len() - 1 {
     let mut inside = false;
@@ -126,7 +98,6 @@ pub fn solve() {
           }
         }
       } else if inside {
-        new_matrix[y][x] = 'I';
         included += 1;
       
       }
@@ -135,7 +106,6 @@ pub fn solve() {
   }
 
   print_matrix(&matrix);
-  print_matrix(&new_matrix);
   println!("{}", included);
 
 }
