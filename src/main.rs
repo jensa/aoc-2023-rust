@@ -1,6 +1,6 @@
-mod day_10;
+mod day_11;
 mod util;
 
 fn main() {
-    day_10::solve();
+    day_11::solve();
 }

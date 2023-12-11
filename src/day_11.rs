@@ -21,13 +21,35 @@ pub fn solve() {
       }
     }
   }
-  print_matrix(&matrix);
+
+  let mut extra_columns = 0;
+  let mut finished_matrix = matrix.clone();
+  for x in 1..matrix[0].len() -1 {
+    let mut empty = true;
+    for y in 1..matrix.len() - 1 {
+      empty = empty && matrix[y][x] == '.';
+    }
+    if empty {
+      //add a column, this means adding an element to each vec, this gonna be expensive? nah
+      println!("Adding empty column at {}", x + extra_columns);
+       for y2 in 0..matrix.len() {
+        finished_matrix[y2].insert(x + extra_columns, '.');
+       }
+       extra_columns +=1;
+    }
+  }
+
+  print_matrix(&finished_matrix);
 }
 
 fn print_matrix (matrix: &Vec<Vec<char>>) {
-  for y in 0..matrix.len() {
-    print!("{}:", y);
-    for x in 0..matrix[y].len() {
+  for y in 1..matrix.len()-1 {
+    if y > 9 {
+      print!("{}:", y);
+    } else {
+      print!("{} :", y);
+    }
+    for x in 1..matrix[y].len()-1 {
       print!("{}", matrix[y][x]);
     }
     println!();
