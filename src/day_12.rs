@@ -8,8 +8,17 @@ pub fn solve() {
     let (spring_str, group_str) = split_in_two(&row, " ");
     let groups = group_str.split(",").map(|e| e.to_string().to_i32() as usize).collect::<Vec<usize>>();
 
-    let theos = make_theoreticals(spring_str.len(), &groups);
-    let valid = test_theoreticals(&theos.iter().map(|e| e.chars().collect::<Vec<char>>()).collect(), &spring_str.chars().collect());
+    let new_spring_str = format!("{}?{}?{}?{}?{}", spring_str, spring_str, spring_str, spring_str, spring_str);
+
+    let mut new_groups = vec![];
+    for i in 0..5 {
+      for g in &groups {
+        new_groups.push(*g);
+      }
+    }
+    println!("trying {} {:?}", new_spring_str, new_groups);
+    let theos = make_theoreticals(new_spring_str.len(), &new_groups);
+    let valid = test_theoreticals(&theos.iter().map(|e| e.chars().collect::<Vec<char>>()).collect(), &new_spring_str.chars().collect());
     println!("{:?}", valid);
     total_valid += valid;
   
