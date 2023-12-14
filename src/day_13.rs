@@ -22,64 +22,38 @@ pub fn solve() {
   let mut total = 0;
   for p in patterns {
 
-    let vertical = vertical_reflection(&p, false);
-    let mut gottem = false;
+    let vertical = vertical_reflection(&p, None);
     if vertical.is_some() {
-      //print_matrix_vertical(&p, vertical.unwrap());
-
-      //generate all others, try them return the one that gives value
       let new_one = generate_new_matrices(&p);
       for n in new_one {
-        let vert = vertical_reflection(&n, false);
-        let hori = horizontal_reflection(&n, false);
+        let vert = vertical_reflection(&n, vertical);
+        let hori = horizontal_reflection(&n, None);
         if vert.is_some() && vert.unwrap() != vertical.unwrap() {
           total += vert.unwrap();
-          gottem = true;
           break;
-        } else if hori.is_some() && hori.unwrap() != vertical.unwrap() {
+        } else if hori.is_some() {
           total += 100 * hori.unwrap();
-          gottem = true;
           break;
         }
       }
+
     } else {
-      let horizontal = horizontal_reflection(&p, false);
+      let horizontal = horizontal_reflection(&p, None);
       if horizontal.is_some() {
         let new_one = generate_new_matrices(&p);
         for n in new_one {
-          let vert = vertical_reflection(&n, false);
-          let hori = horizontal_reflection(&n, false);
-          if vert.is_some() && vert.unwrap() != horizontal.unwrap() {
+          let vert = vertical_reflection(&n, None);
+          let hori = horizontal_reflection(&n, horizontal);
+          if vert.is_some() {
             total += vert.unwrap();
-            
-            gottem = true;
             break;
           } else if hori.is_some() && hori.unwrap() != horizontal.unwrap() {
             total += 100 * hori.unwrap();
-            gottem = true;
             break;
           }
         }
-        //print_matrix_horizontal(&p, horizontal.unwrap());
-        //total += 100 * horizontal.unwrap()
-      } else {
-        print_matrix(&p);
-        println!("               ");
-        vertical_reflection(&p, true);
-        println!("~~~~~~~~~~~~~");
-        horizontal_reflection(&p, true);
-        println!("--------------")
       }
     }
-    if !gottem {
-      print_matrix(&p);
-      println!("               ");
-      vertical_reflection(&p, true);
-      println!("~~~~~~~~~~~~~");
-      horizontal_reflection(&p, true);
-      println!("--------------")
-    }
-
   }
   println!("total: {}", total);
 
@@ -100,31 +74,6 @@ fn generate_new_matrices(p: &Vec<String>) ->  Vec<Vec<String>> {
   return ret;
 }
 
-fn generate_new_matrices_horizontal(p: &Vec<String>, before: usize) -> Option<usize> {
-  println!("``````````");
-  print_matrix(&p);
-  println!("``````````");
-  for r in 0..p.len() {
-    let row = &p[r];
-    println!("rooooooooooooooooooow");
-    println!("befor: {}", row);
-    for (i,c) in row.chars().enumerate() {
-      let mut new_row = row.clone().chars().collect::<Vec<char>>();
-      
-      new_row[i] = convert(c);
-      println!("after: {}", new_row.iter().collect::<String>());
-      let mut new_matrix = p.clone();
-      new_matrix[r] = new_row.iter().collect::<String>();
-      let horizontal = horizontal_reflection(&new_matrix, false);
-      if horizontal.is_some() && horizontal.unwrap() != before {
-        return horizontal;
-      }
-    }
-    println!("eeeeeeennnnnnnnddddddd");
-  }
-  return None;
-}
-
 fn convert(s:char) -> char {
   return if s == '#' { '.' } else { '#' }
 }
@@ -141,18 +90,15 @@ fn rotate_matrix(p: &Vec<String>) -> Vec<String> {
   return new_vec;
 }
 
-fn vertical_reflection(p: &Vec<String>, print:bool) -> Option<usize> {
+fn vertical_reflection(p: &Vec<String>, dont_return_if:Option<usize>) -> Option<usize> {
   let rotated = rotate_matrix(&p);
-    return horizontal_reflection(&rotated, print);
+    return horizontal_reflection(&rotated, dont_return_if);
 }
 
-fn horizontal_reflection(p: &Vec<String>, print:bool) -> Option<usize> {
+fn horizontal_reflection(p: &Vec<String>, dont_return_if:Option<usize>) -> Option<usize> {
     let mut last_row = "";
     let mut candidate = None;
     for row in 0..p.len() {
-      if print {
-        println!("{} and {} at {}", last_row, p[row], row);
-      }
       if last_row == p[row] {
         //test reflection here
         let mut up = row-1;
@@ -160,9 +106,6 @@ fn horizontal_reflection(p: &Vec<String>, print:bool) -> Option<usize> {
         let mut failed = false;
         loop {
           if up == 0 || down + 1 == p.len() {
-            if print {
-              println!("we broke immedately");
-            }
             break;
           } 
           up -= 1;
@@ -172,18 +115,17 @@ fn horizontal_reflection(p: &Vec<String>, print:bool) -> Option<usize> {
             break;
           }
         }
-        if print {
-          println!("{} , {} is where we stopped", up, down);
-        }
         if !failed {
-          if print{
-            println!("well ge got row {}", row);
-          }
           // we _could still find other reflections
-          if row > p.len() {
+          if row > p.len() && dont_return_if.unwrap() != row {
             return Some(row)
           } else {
-            candidate = Some(row)
+            if dont_return_if.is_some() && dont_return_if.unwrap() != row {
+              candidate = Some(row)
+            } else if dont_return_if.is_none() {
+              candidate = Some(row)
+            }
+            
           }
         }
       }
@@ -195,29 +137,6 @@ fn horizontal_reflection(p: &Vec<String>, print:bool) -> Option<usize> {
 
 fn print_matrix (matrix: &Vec<String>) {
   for y in 0..matrix.len() {
-    println!("{}", matrix[y]);
-  }
-}
-
-
-fn print_matrix_vertical (matrix: &Vec<String>, v:usize) {
-  let prefix = (0..v-1).map(|e| " ").collect::<String>();
-  println!("{}><", prefix);
-  for y in 0..matrix.len() {
-    println!("{}", matrix[y]);
-  }
-  println!("{}><", prefix);
-}
-
-fn print_matrix_horizontal (matrix: &Vec<String>, v:usize) {
-  for y in 0..matrix.len() {
-    if y == v-1 {
-      print!("v ")
-    } else if y == v{
-      print!("^ ")
-    } else {
-      print!("  ")
-    }
     println!("{}", matrix[y]);
   }
 }
