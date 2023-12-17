@@ -1,13 +1,10 @@
-use std::collections::HashMap;
-
-use crate::util::{self, split_in_two, OptNumStr};
+use crate::util::{self};
 
 pub fn solve() {
   let rows = util::input_lines_as_strings();
 
     //plus 2 for sentinel rows
     let mut map: Vec<Vec<char>> = vec![];
-
     for (y,line) in rows.iter().enumerate() {
         map.push(vec![]);
         for (x, c) in line.chars().enumerate() {
@@ -32,17 +29,13 @@ pub fn solve() {
     }
   }
 
-  let mut load = rows[0].len() - 1;
-
   let mut total_load = 0;
   for y in 0..map.len() {
     for x in 0..map[y].len() {
       if map[y][x] == 'O' {
-        println!("load at {},{} is {}", y,x,load);
-        total_load += load;
+        total_load += map.len()-y;
       }
     }
-    load -= 1;
   }
 
   print_matrix(&map);
@@ -51,24 +44,23 @@ pub fn solve() {
 }
 
 fn north_is_empty(y:usize, x:usize, map:&Vec<Vec<char>>) -> bool {
-  //can we even check
   if y < 1 {
     return false;
   }
   if map[y-1].len() < x + 1 {
     return false;
   }
-  //let c = map[y-1][x];
-  //println!("char at [{}][{}]", y, x);
   return y > 0 && map[y-1][x] == '.'
 }
 
 fn print_matrix (matrix: &Vec<Vec<char>>) {
   for y in 0..matrix.len() {
-    if y > 8 {
+    if y > 98 {
       print!("{}:", y+1);
-    } else {
+    } else if y > 8 {
       print!("{} :", y+1);
+    } else {
+      print!("{}  :", y+1);
     }
     for x in 0..matrix[y].len() {
       print!("{}", matrix[y][x]);
