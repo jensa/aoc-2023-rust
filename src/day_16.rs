@@ -7,19 +7,79 @@ pub fn solve() {
   let init_grid_width = rows[0].len() + 2;
   let init_grid_height = rows.len() + 2;
   let mut matrix: Vec<Vec<char>> = vec![vec!['.'; init_grid_width]; init_grid_height];
-  print_matrix(&matrix);
   for (y,line) in rows.iter().enumerate() {
     for (x, c) in line.chars().enumerate() {
       matrix[y+1][x+1] = c;
     }  
   }
+  let mut start_poses = vec![];
+
+
+  
+  //NW corner
+  start_poses.push(Beam {direction:Direction::EAST, coord: (1,0), moving:true});
+  start_poses.push(Beam {direction:Direction::SOUTH, coord: (0,1), moving:true});
+  for x in 2..init_grid_width - 2 {
+    start_poses.push(Beam {direction:Direction::SOUTH, coord: (0,x), moving:true});
+  }
+  //NE corner
+  start_poses.push(Beam {direction:Direction::WEST, coord: (1,init_grid_width - 1), moving:true});
+  start_poses.push(Beam {direction:Direction::SOUTH, coord: (0,init_grid_width - 2), moving:true});
+
+  for y in 2..init_grid_height - 2 {
+    start_poses.push(Beam {direction:Direction::WEST, coord: (y, init_grid_width-1), moving:true})
+  }
+
+  //SE corner
+  start_poses.push(Beam {direction:Direction::WEST, coord: (init_grid_height-2,init_grid_width - 1), moving:true});
+  start_poses.push(Beam {direction:Direction::NORTH, coord: (init_grid_height-1,init_grid_width - 2), moving:true});
+  for x in (2..init_grid_width - 2).rev() {
+    start_poses.push(Beam {direction:Direction::NORTH, coord: (init_grid_height -1,x), moving:true})
+  }
+  //SW corner
+  start_poses.push(Beam {direction:Direction::EAST, coord: (init_grid_height-2,0), moving:true});
+  start_poses.push(Beam {direction:Direction::NORTH, coord: (init_grid_height-1,1), moving:true});
+
+  for y in (2..init_grid_height - 2).rev() {
+    start_poses.push(Beam {direction:Direction::EAST, coord: (y, 0), moving:true});
+  }
+
+  let mut start_display: Vec<Vec<char>> = vec![vec!['.'; init_grid_width]; init_grid_height];
+  for s in &start_poses {
+    start_display[s.coord.0][s.coord.1] = char_for_dir(&s.direction);
+  }
+  
+  print_full_matrix(&start_display);
+  let mut max_energy = 0;
+  for p in start_poses {
+    println!("we're checking {:?}", p);
+    let energized = find_for_pos(&matrix, p);
+    if energized > max_energy {
+      max_energy = energized;
+    }
+  }
+  println!("Energized: {}", max_energy)
+}
+
+fn char_for_dir(d:&Direction) -> char {
+  return match d {
+      Direction::NORTH => '^',
+      Direction::EAST => '>',
+      Direction::SOUTH => 'v',
+      Direction::WEST => '<'
+  }
+}
+
+fn find_for_pos(matrix: &Vec<Vec<char>>, beam: Beam) -> usize {
+  let init_grid_width = matrix[0].len();
+  let init_grid_height = matrix.len();
   let mut energy_matrices = HashMap::from([
     (Direction::NORTH, vec![vec!['.'; init_grid_width]; init_grid_height]),
     (Direction::EAST, vec![vec!['.'; init_grid_width]; init_grid_height]),
     (Direction::SOUTH, vec![vec!['.'; init_grid_width]; init_grid_height]),
     (Direction::WEST, vec![vec!['.'; init_grid_width]; init_grid_height]),
     ]);
-  let mut curs = vec![Beam {direction:Direction::EAST, coord: (1,0), moving:true}];
+  let mut curs = vec![beam];
 
   let mut has_moving = true;
   while has_moving {
@@ -39,6 +99,7 @@ pub fn solve() {
         new_beams.push(c.clone());
         continue;
       }
+      let old_direction = c.direction.clone();
       let next_char = matrix[next_square.0][next_square.1];
       match next_char {
         '.' => c.direction = c.direction,
@@ -68,10 +129,9 @@ pub fn solve() {
       }
       c.coord = next_square;
       new_beams.push(c.clone());
-      energy_matrices.get_mut(&c.direction).unwrap()[c.coord.0][c.coord.1] = '#';
+      energy_matrices.get_mut(&old_direction).unwrap()[c.coord.0][c.coord.1] = '#';
     }
-    print_matrices_and_return_energized(&energy_matrices);
-
+    //print_matrices_and_return_energized(&energy_matrices);
     has_moving = new_beams.iter().any(|c| c.moving);
     curs = new_beams;
   }
@@ -90,10 +150,11 @@ pub fn solve() {
         final_m[y][x] = matrix[y][x];
       }
     }
-    println!();
+    //println!();
   }
-  print_matrix(&final_m);
-  println!("Energized: {}", energized_total)
+
+  //print_matrix(&final_m);
+  return energized_total;
 }
 
 
@@ -109,8 +170,8 @@ fn index_for_direction(c: (usize, usize), d:&Direction) -> (usize, usize) {
 }
 
 fn print_matrices_and_return_energized (matrices: &HashMap<Direction, Vec<Vec<char>>>) -> Vec<Vec<char>> {
-  clearScreen();
-  println!("-----------------------");
+  //clearScreen();
+  //println!("-----------------------");
   let north = matrices.get(&Direction::NORTH).unwrap();
   let mut matrix: Vec<Vec<char>> = vec![vec!['.'; north[0].len()]; north.len()];
 
@@ -120,11 +181,11 @@ fn print_matrices_and_return_energized (matrices: &HashMap<Direction, Vec<Vec<ch
   mod_matrix(&mut matrix,  matrices.get(&Direction::WEST).unwrap(), '<');
   for y in 1..matrix.len() - 1 {
     for x in 1..matrix[y].len() - 1 {
-      print!("{}", matrix[y][x]);
+      //print!("{}", matrix[y][x]);
       if matrix[y][x] != '.' {
       }
     }
-    println!();
+    //println!();
   }
   return matrix;
 }
@@ -151,6 +212,15 @@ fn mod_matrix(matrix: &mut Vec<Vec<char>>, from:&Vec<Vec<char>>, found:char) {
 fn print_matrix (matrix: &Vec<Vec<char>>) {
   for y in 1..matrix.len() - 1 {
     for x in 1..matrix[y].len() - 1 {
+      print!("{}", matrix[y][x]);
+    }
+    println!();
+  }
+}
+
+fn print_full_matrix (matrix: &Vec<Vec<char>>) {
+  for y in 0..matrix.len() {
+    for x in 0..matrix[y].len() {
       print!("{}", matrix[y][x]);
     }
     println!();
